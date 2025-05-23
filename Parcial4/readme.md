@@ -79,6 +79,93 @@ Ejemplo:
 
 ---
 
+## Arquitectura del sistema
+
+El sistema esta compuesto por modulos independientes:
+
+* `main.cpp`: coordina todo el flujo del sistema.
+* `gestor_archivos`: se encarga de escanear carpetas recursivamente.
+* `compresor`: comprime archivos en paralelo usando `zlib`.
+* `encriptador`: encripta archivos `.gz` usando `OpenSSL`.
+* `restaurador`: desencripta `.enc` y descomprime `.gz`.
+* `utils`: funciones auxiliares para derivar claves (AES-256).
+
+Cada modulo es reutilizable y mantiene responsabilidades bien definidas.
+
+---
+
+## Paralelismo con OpenMP
+
+Este sistema aplica paralelismo con `OpenMP` en las etapas de:
+
+* Compresion:
+
+```cpp
+#pragma omp parallel for
+for (int i = 0; i < archivos.size(); i++) {
+    comprimir_archivo(archivos[i], carpeta);
+}
+```
+
+* Encriptacion:
+
+```cpp
+#pragma omp parallel for
+for (int i = 0; i < archivos_gz.size(); i++) {
+    encriptar_archivo(...);
+}
+```
+
+* Restauracion:
+
+```cpp
+#pragma omp parallel for
+for (int i = 0; i < archivos_enc.size(); i++) {
+    desencriptar_archivo(...);
+}
+```
+
+Se aprovechan multiples nucleos del procesador, acelerando el proceso especialmente con grandes volumenes de archivos.
+
+---
+
+## Algoritmo de compresion y biblioteca utilizada
+
+* Algoritmo: GZIP (deflate)
+* Biblioteca: `zlib`
+* Se usa lectura por bloques (`ifstream`) y escritura con `gzwrite()`
+
+---
+
+## Encriptacion y biblioteca utilizada
+
+* Algoritmo: AES-256 en modo CBC
+* Biblioteca: `OpenSSL`
+* Se deriva clave e IV usando SHA-256 sobre la contrasena del usuario
+* Se usa `EVP_EncryptInit_ex`, `EVP_EncryptUpdate`, `EVP_EncryptFinal_ex`
+
+---
+
+## Justificacion del lenguaje y decisiones de diseno
+
+* **Lenguaje**: C++
+
+  * Permite control de bajo nivel sobre entrada/salida de archivos.
+  * Tiene buena integracion con librerias como zlib y OpenSSL.
+  * Excelente soporte para paralelismo con OpenMP.
+
+* **OpenMP**:
+
+  * Facil de integrar en bucles paralelizables.
+  * Requiere unicamente una directiva `#pragma omp` para escalar a multiples nucleos.
+
+* **Diseño modular**:
+
+  * Separar en modulos facilita mantenibilidad, pruebas e integracion.
+  * Permite mejorar o cambiar componentes (ej. reemplazar zlib o cambiar algoritmo de encriptacion) sin afectar el resto del sistema.
+
+---
+
 ## Carpetas generadas
 
 | Carpeta           | Contenido                                 |
