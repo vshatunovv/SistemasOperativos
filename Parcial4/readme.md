@@ -146,7 +146,7 @@ Se aprovechan multiples nucleos del procesador, acelerando el proceso especialme
 
 ---
 
-## Justificacion del lenguaje y decisiones de diseno
+## Justificacion del lenguaje y decisiones de diseño
 
 * **Lenguaje**: C++
 
